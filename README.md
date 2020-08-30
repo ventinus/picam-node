@@ -3,7 +3,7 @@ This package wraps the PiCam library api in node and backs up the video in segme
 
 ## Setup
 To backup the files to S3, you will need to have aws credentials available under your default profile
-
+- setup Raspberry Pi with a push button on GPIO 4 and an LED on GPIO 17
 - `./install_picam.sh`
 - `npm install`
 - modify the config values in `./src/index.js`
@@ -12,7 +12,7 @@ To backup the files to S3, you will need to have aws credentials available under
 ## Progress
 
 ### Next steps
-- start picam process on boot
+- start script on boot
 - hook up with external battery
 - assemble physical components to something wearable
 - support more/all command line args in config
