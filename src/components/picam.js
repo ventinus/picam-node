@@ -2,6 +2,8 @@ const AWS = require('aws-sdk')
 const fs = require('fs')
 const { exec } = require('child_process')
 const kill = require('tree-kill')
+const { ledOn, ledOff } = require('./status')
+const { startButton } = require('./button')
 
 const s3 = new AWS.S3()
 
@@ -38,11 +40,26 @@ class PiCam {
     this.filename = ''
     this.recording = false
     this.canRecord = false
+    this.buttonPressed = false
     process.on('exit', this.stop.bind(this))
+    startButton(this.onButtonPress.bind(this))
+    console.log('picam ready')
+  }
+
+  onButtonPress(err, value) {
+    if (err) console.log(err)
+    if (this.buttonPressed && value === 1) {
+      this.buttonPressed = false
+      // do something
+      this.record(!this.recording)
+    } else if (!this.buttonPressed && value === 0) {
+      this.buttonPressed = true
+    }
   }
 
   // start picam
   start() {
+    ledOff()
     const filesToRemove = ['hooks', 'rec', 'state'].map((name) => `${PICAM_DIR}/${name}`).join(' ')
     this.picamProcess = exec(`rm ${filesToRemove}`)
     this.picamProcess = exec(`${PICAM_DIR}/picam --alsadev hw:1,0`)
@@ -77,12 +94,14 @@ class PiCam {
   // Record a video
   record(on = true) {
     if (on && !this.recording) {
+      ledOn()
       this.recording = true
       this.doSegment()
     } else if (!on && this.recording) {
       this.recording = false
       clearTimeout(this.segmentId)
       exec(commands.stop)
+      ledOff()
     }
   }
 
