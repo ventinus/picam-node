@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npm run clean && node src",
+    "start": "npm run clean && node src 2>&1 | tee ./picam.log",
     "clean": "rm -rf hooks rec state && ./make_dirs.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

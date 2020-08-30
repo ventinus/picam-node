@@ -1,5 +1,15 @@
 # BodyCam
-This package wraps the PiCam library api in node and backs
+This package wraps the PiCam library api in node and backs up the video in segments to S3
+
+## Setup
+To backup the files to S3, you will need to have aws credentials available under your default profile
+
+- `./install_picam.sh`
+- `npm install`
+- modify the config values in `./src/index.js`
+- `npm start`
+
+## Progress
 
 ### Next steps
 - start picam process on boot

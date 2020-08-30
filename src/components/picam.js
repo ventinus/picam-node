@@ -43,7 +43,6 @@ class PiCam {
     this.buttonPressed = false
     process.on('exit', this.stop.bind(this))
     startButton(this.onButtonPress.bind(this))
-    console.log('picam ready')
   }
 
   onButtonPress(err, value) {
@@ -124,6 +123,7 @@ class PiCam {
       this.filename = message.match(/rec\/archive\/(.+)/)[1]
     } else if (message.includes('capturing started')) {
       this.canRecord = true
+      console.log('picam ready')
     }
   }
 
