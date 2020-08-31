@@ -7,16 +7,6 @@ const { startButton } = require('./button')
 
 const s3 = new AWS.S3()
 
-const FLAGS = []
-const OPTS = []
-
-const PICAM_DIR = process.cwd()
-
-const commands = {
-  start: `touch ${PICAM_DIR}/hooks/start_record`,
-  stop: `touch ${PICAM_DIR}/hooks/stop_record`,
-}
-
 const defaultConfig = {
   duration: 10000,
   keyPrefix: '',
@@ -34,6 +24,14 @@ class PiCam {
     if (!this.config.bucket) {
       throw new Error('config property `bucket` is required!')
     }
+    if (!this.config.dir) {
+      throw new Error('config property `dir` is required!')
+    }
+    this.dir = config.dir
+    this.commands = {
+      start: `touch ${this.dir}/hooks/start_record`,
+      stop: `touch ${this.dir}/hooks/stop_record`,
+    }
     AWS.config.update({ region: this.config.region })
     this.picamProcess = null
     this.segmentId = 0
@@ -41,8 +39,8 @@ class PiCam {
     this.recording = false
     this.canRecord = false
     this.buttonPressed = false
-    process.on('exit', this.stop.bind(this))
     startButton(this.onButtonPress.bind(this))
+    process.on('exit', this.stop.bind(this))
   }
 
   onButtonPress(err, value) {
@@ -59,9 +57,9 @@ class PiCam {
   // start picam
   start() {
     ledOff()
-    const filesToRemove = ['hooks', 'rec', 'state'].map((name) => `${PICAM_DIR}/${name}`).join(' ')
+    const filesToRemove = ['hooks', 'rec', 'state'].map((name) => `${this.dir}/${name}`).join(' ')
     this.picamProcess = exec(`rm ${filesToRemove}`)
-    this.picamProcess = exec(`${PICAM_DIR}/picam --alsadev hw:1,0`)
+    this.picamProcess = exec(`${this.dir}/picam --alsadev hw:1,0`)
 
     this.picamProcess.stdout.on('data', this.onPicamOutput.bind(this))
 
@@ -99,15 +97,15 @@ class PiCam {
     } else if (!on && this.recording) {
       this.recording = false
       clearTimeout(this.segmentId)
-      exec(commands.stop)
+      exec(this.commands.stop)
       ledOff()
     }
   }
 
   doSegment() {
-    exec(commands.start)
+    exec(this.commands.start)
     this.segmentId = setTimeout(() => {
-      exec(commands.stop)
+      exec(this.commands.stop)
     }, this.config.duration)
   }
 
@@ -128,16 +126,17 @@ class PiCam {
   }
 
   async saveChunk(filename) {
+    const formattedName = filename.split('_').join('/')
     await wait(1000)
     await s3
       .putObject({
-        Key: `${this.config.keyPrefix}${filename}`,
+        Key: `${this.config.keyPrefix}${formattedName}`,
         Bucket: this.config.bucket,
-        Body: fs.readFileSync(`${PICAM_DIR}/rec/archive/${filename}`),
+        Body: fs.readFileSync(`${this.dir}/rec/archive/${filename}`),
         ContentType: 'video/mp2t',
       })
       .promise()
-    exec(`rm ${PICAM_DIR}/rec/archive/${filename}`)
+    exec(`rm ${this.dir}/rec/archive/${filename}`)
   }
 }
 
